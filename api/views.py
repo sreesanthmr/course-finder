@@ -7,71 +7,76 @@ import random, string
 from datetime import timedelta
 from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
+from django.utils import timezone
 
 
-class UserRegView(APIView):
-
+class StudentRegView(APIView):
     def post(self, request):
-        try:
-            data = request.data
-            serializer = UserRegSerializer(data=data)
+        # data = request.data
 
-            if serializer.is_valid():
+        custom_user_data = {
+            "email": request.data.get("email"),
+            "password": request.data.get("password"),
+        }
+        student_data = {
+            "name": request.data.get("name"),
+            "gender": request.data.get("gender"),
+            "location": request.data.get("location"),
+        }
 
-                user = CustomUser.objects.create_user(**serializer.validated_data)
-                otp = "".join(random.choices(string.digits, k=6))
-                user.otp = otp
-                user.otp_expiry = timezone.now() + timedelta(minutes=5)
-                user.save()
+        serializer_one = CustomUserSerializer(data=custom_user_data)
+        serializer_two = StudentSerializer(data=student_data)
 
-                try:
-                    send_mail(
-                        "Your OTP Code",
-                        f"Your OTP code is {otp}",
-                        settings.EMAIL_HOST_USER,
-                        [user.email],
-                        fail_silently=False,
-                    )
-                    return Response(
-                        {"message": "User created. Please verify your OTP."},
-                        status=status.HTTP_201_CREATED,
-                    )
+        if serializer_one.is_valid() and serializer_two.is_valid():
+            user = CustomUser.objects.create_user(**serializer_one.validated_data)
+            student = Student.objects.update_or_create(**serializer_two.validated_data)
+            student.custom_user_id = user
 
-                except BadHeaderError:
-                    return Response(
-                        {"error": "Invalid header found."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            otp = "".join(random.choices(string.digits, k=6))
+            student.otp = otp
+            student.otp_expiry = timezone.now() + timedelta(minutes=5)
+            # user.is_active = False
+            student.save()
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                send_mail(
+                    "Your OTP Code",
+                    f"Your OTP code is {otp}",
+                    settings.EMAIL_HOST_USER,
+                    [student.email],
+                    fail_silently=False,
+                )
+                return Response(
+                    {"message": "Student created. Please verify your OTP."},
+                    status=status.HTTP_201_CREATED,
+                )
 
-        except Exception as e:
-            return Response(
-                {"message": "something went wrong"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            except BadHeaderError:
+                return Response(
+                    {"error": "Invalid header found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        return Response(serializer_one.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyOtpView(APIView):
     def post(self, request):
-        try:
-            print("hello world")
-            data = request.data
-            serializer = OtpVerificationSerializer(data=data)
+        data = request.data
+        serializer = OtpVerificationSerializer(data=data)
 
-            if serializer.is_valid():
+        if serializer.is_valid():
+            email = serializer.validated_data["email"]
+            otp = serializer.validated_data["otp"]
+            student = Student.objects.filter(email=email).first()
 
-                email=serializer.validated_data["email"]
-                otp=serializer.validated_data["otp"]
-                user = CustomUser.objects.filter(email=email).first()
-
-                if user and user.otp == otp and user.otp_expiry > timezone.now():
-                    user.otp = None
-                    user.otp_expiry = None
-                    user.is_active = True
-                    user.save()
-
+            if student and student.otp == otp and student.otp_expiry > timezone.now():
+                student.otp = None
+                student.otp_expiry = None
+                student.is_active = True
+                student.save()
                 return Response(
-                    {"message": "account registered successfully"},
+                    {"message": "Account verified successfully."},
                     status=status.HTTP_200_OK,
                 )
 
@@ -80,71 +85,47 @@ class VerifyOtpView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        except Exception as e:
-            return Response(
-                {"message": "something went wrong"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class AdminRegView(APIView):
-
-    def post(self, request):
-        try:
-            data = request.data
-            serializer = AdminRegSerializer(data=data)
-            if serializer.is_valid():
-
-                CustomUser.objects.create_superuser(**serializer.validated_data)
-                return Response(
-                    {"message": "admin registered succesfully"},
-                    status=status.HTTP_201_CREATED,
-                )
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            return Response(
-                {"message": "something went wrong"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CollegeRegView(APIView):
     def post(self, request):
-        try:
-            data = request.data
-            serializer = CollegeRegSerializer(data=data)
-            if serializer.is_valid():
+        data = request.data
+        serializer = CollegeSerializer(data=data)
 
-                CustomUser.objects.create_user(**serializer.validated_data)
-                return Response(
-                    {"message": "college registered succesfully"},
-                    status=status.HTTP_201_CREATED,
-                )
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
+        if serializer.is_valid():
+            college = serializer.save()
             return Response(
-                {"message": "something went wrong"}, status=status.HTTP_400_BAD_REQUEST
+                {"message": "College registered successfully. Please log in to receive your token."},
+                status=status.HTTP_201_CREATED,
             )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminRegView(APIView):
+    def post(self, request):
+        data = request.data
+        serializer = AdminRegSerializer(data=data)
+
+        if serializer.is_valid():
+            admin = serializer.save()
+            return Response(
+                {"message": "Admin registered successfully."},
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
     def post(self, request):
-        try:
-            data = request.data
-            serializer = LoginSerializer(data=data)
+        data = request.data
+        serializer = LoginSerializer(data=data)
 
-            if serializer.is_valid():
+        if serializer.is_valid():
+            user = serializer.validated_data["user"]
+            token = serializer.get_jwt_token(user)
+            return Response(token, status=status.HTTP_200_OK)
 
-                response = serializer.get_jwt_token(serializer.data)
-                return Response(response, status=status.HTTP_200_OK)
-
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            return Response(
-                {"message": "something went wrong"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
