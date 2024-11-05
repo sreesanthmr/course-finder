@@ -13,51 +13,80 @@ from django.utils import timezone
 class StudentRegView(APIView):
     def post(self, request):
         # data = request.data
+        # email = data.get('email')
+        # password = data.get('password')
+        # student_name = data.get('student_name')
+        # gender = data.get('gender')
+        # location = data.get('location')
+        try:
+            # print("hi")
+            custom_user_data = {
+                "email": request.data.get("email"),
+                "password": request.data.get("password"),
+                # "name": request.data.get("name"),
+            }
 
-        custom_user_data = {
-            "email": request.data.get("email"),
-            "password": request.data.get("password"),
-        }
-        student_data = {
-            "name": request.data.get("name"),
-            "gender": request.data.get("gender"),
-            "location": request.data.get("location"),
-        }
+            # print("world")
+            serializer_one = CustomUserSerializer(data=custom_user_data)
 
-        serializer_one = CustomUserSerializer(data=custom_user_data)
-        serializer_two = StudentSerializer(data=student_data)
+            # print("hello")
+            if serializer_one.is_valid():
+                # print("hhhhh")
+                user = CustomUser.objects.create_user(**serializer_one.validated_data)
+                # print(type(user))
 
-        if serializer_one.is_valid() and serializer_two.is_valid():
-            user = CustomUser.objects.create_user(**serializer_one.validated_data)
-            student = Student.objects.update_or_create(**serializer_two.validated_data)
-            student.custom_user_id = user
-
-            otp = "".join(random.choices(string.digits, k=6))
-            student.otp = otp
-            student.otp_expiry = timezone.now() + timedelta(minutes=5)
-            # user.is_active = False
-            student.save()
-
-            try:
-                send_mail(
-                    "Your OTP Code",
-                    f"Your OTP code is {otp}",
-                    settings.EMAIL_HOST_USER,
-                    [student.email],
-                    fail_silently=False,
-                )
+            else:
+                print("Serializer one errors:", serializer_one.errors)
                 return Response(
-                    {"message": "Student created. Please verify your OTP."},
-                    status=status.HTTP_201_CREATED,
+                    serializer_one.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
-            except BadHeaderError:
-                return Response(
-                    {"error": "Invalid header found."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            student_data = {
+                "student_name": request.data.get("student_name"),
+                "gender": request.data.get("gender"),
+                "location": request.data.get("location"),
 
-        return Response(serializer_one.errors, status=status.HTTP_400_BAD_REQUEST)
+            }
+
+            serializer_two = StudentSerializer(data=student_data)
+        
+
+            if serializer_two.is_valid():
+                student = serializer_two.save()
+
+                student.custom_user = user
+                otp = "".join(random.choices(string.digits, k=6))
+                student.otp = otp
+                student.otp_expiry = timezone.now() + timedelta(minutes=5)
+
+                student.save()
+
+                try:
+                    send_mail(
+                        "Your OTP Code",
+                        f"Your OTP code is {otp}",
+                        settings.EMAIL_HOST_USER,
+                        [student.custom_user.email],
+                        fail_silently=False,
+                    )
+                    return Response(
+                        {"message": "Student created. Please verify your OTP."},
+                        status=status.HTTP_201_CREATED,
+                    )
+
+                except BadHeaderError:
+                    return Response(
+                        {"error": "Invalid header found."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                print("Serializer one errors:", serializer_two.errors)
+  
+        except Exception as e:
+            return Response(
+                {"message": f"somthing went wrong========={e}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class VerifyOtpView(APIView):
@@ -88,19 +117,19 @@ class VerifyOtpView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CollegeRegView(APIView):
-    def post(self, request):
-        data = request.data
-        serializer = CollegeSerializer(data=data)
+# class CollegeRegView(APIView):
+#     def post(self, request):
+#         data = request.data
+#         serializer = CollegeSerializer(data=data)
 
-        if serializer.is_valid():
-            college = serializer.save()
-            return Response(
-                {"message": "College registered successfully. Please log in to receive your token."},
-                status=status.HTTP_201_CREATED,
-            )
+#         if serializer.is_valid():
+#             college = serializer.save()
+#             return Response(
+#                 {"message": "College registered successfully. Please log in to receive your token."},
+#                 status=status.HTTP_201_CREATED,
+#             )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AdminRegView(APIView):
@@ -109,7 +138,7 @@ class AdminRegView(APIView):
         serializer = AdminRegSerializer(data=data)
 
         if serializer.is_valid():
-            admin = serializer.save()
+            admin = CustomUser.objects.create_superuser(**serializer.validated_data)
             return Response(
                 {"message": "Admin registered successfully."},
                 status=status.HTTP_201_CREATED,

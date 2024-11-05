@@ -11,37 +11,34 @@ class CustomUserSerializer(serializers.Serializer):
 
     email = serializers.EmailField()
     password = serializers.CharField()
-    name = serializers.CharField()
-
-class StudentSerializer(serializers.Serializer):
-
-    student_name = serializers.CharField()
-    gender = serializers.CharField()
-    location = serializers.CharField()
+    # name = serializers.CharField()
 
 
+class StudentSerializer(serializers.ModelSerializer):
+
+    # student_name = serializers.CharField()
+    # gender = serializers.CharField()
+    # location = serializers.CharField()
+    # custom_user = serializers.CharField()
 
     # email = serializers.EmailField(write_only=True)
     # password = serializers.CharField(write_only=True)
 
-    # class Meta:
-    #     model = Student
-    #     fields = ["email", "password", "name", "gender", "location"]
+    class Meta:
+        model = Student
+        fields = ["student_name","gender", "location"]
 
     # def create(self, validated_data):
     #     # Extract CustomUser fields
     #     email = validated_data.pop("email")
     #     password = validated_data.pop("password")
-        
+
     #     # Create CustomUser instance first
     #     user = CustomUser.objects.create_user(email=email, password=password)
-        
+
     #     # Now create Student instance and link with CustomUser
     #     student = Student.objects.create(customuser_ptr=user, **validated_data)
     #     return student
-
-
-
 
     # class Meta:
     #     model = Student
@@ -51,40 +48,40 @@ class StudentSerializer(serializers.Serializer):
     #     # Extract fields specific to CustomUser
     #     email = validated_data.pop("email")
     #     password = validated_data.pop("password")
-        
+
     #     # Create the Student instance (inherits from CustomUser)
     #     student = Student.objects.create_user(email=email, password=password, **validated_data)
-        
+
     #     return student
 
 
-class CollegeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = College
-        exclude = ["created_at", "updated_at", "is_active", "is_superuser", "is_admin", "is_staff"]
+# class CollegeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = College
+#         exclude = ["created_at", "updated_at"]
 
-    def create(self, validated_data):
-        college = College.objects.create_user(**validated_data)
-        college.is_active = True 
-        college.save()
-        return college
+#     def create(self, validated_data):
+#         college = College.objects.create_user(**validated_data)
+#         college.is_active = True
+#         college.save()
+#         return college
 
 
 class AdminRegSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    name = serializers.CharField()
+    # name = serializers.CharField()
 
-    def create(self, validated_data):
-        email = validated_data.get("email")
-        password = validated_data.get("password")
-        name = validated_data.get("name")
-        admin = CustomUser.objects.create_superuser(
-            email=email,
-            password=password,
-            name=name,
-        )
-        return admin
+    # def create(self, validated_data):
+    #     email = validated_data.get("email")
+    #     password = validated_data.get("password")
+    #     name = validated_data.get("name")
+    #     admin = CustomUser.objects.create_superuser(
+    #         email=email,
+    #         password=password,
+    #         name=name,
+    #     )
+    #     return admin
 
 
 class LoginSerializer(serializers.Serializer):
