@@ -4,84 +4,43 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-class CustomUserSerializer(serializers.Serializer):
-    # class Meta:
-    #     model = CustomUser
-    #     fields = ["email", "password"]
-
-    email = serializers.EmailField()
-    password = serializers.CharField()
-    # name = serializers.CharField()
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["email", "password"]
 
 
-class StudentSerializer(serializers.ModelSerializer):
-
-    # student_name = serializers.CharField()
-    # gender = serializers.CharField()
-    # location = serializers.CharField()
-    # custom_user = serializers.CharField()
-
-    # email = serializers.EmailField(write_only=True)
-    # password = serializers.CharField(write_only=True)
-
+class StudentRegSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ["student_name","gender", "location"]
-
-    # def create(self, validated_data):
-    #     # Extract CustomUser fields
-    #     email = validated_data.pop("email")
-    #     password = validated_data.pop("password")
-
-    #     # Create CustomUser instance first
-    #     user = CustomUser.objects.create_user(email=email, password=password)
-
-    #     # Now create Student instance and link with CustomUser
-    #     student = Student.objects.create(customuser_ptr=user, **validated_data)
-    #     return student
-
-    # class Meta:
-    #     model = Student
-    #     fields = ["name", "gender", "location"]
-
-    # def create(self, validated_data):
-    #     # Extract fields specific to CustomUser
-    #     email = validated_data.pop("email")
-    #     password = validated_data.pop("password")
-
-    #     # Create the Student instance (inherits from CustomUser)
-    #     student = Student.objects.create_user(email=email, password=password, **validated_data)
-
-    #     return student
+        fields = ["student_name", "gender", "location"]
 
 
-# class CollegeSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = College
-#         exclude = ["created_at", "updated_at"]
+class CollegeRegSerializer(serializers.ModelSerializer):
+    courses = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(), many=True
+    )
 
-#     def create(self, validated_data):
-#         college = College.objects.create_user(**validated_data)
-#         college.is_active = True
-#         college.save()
-#         return college
+    class Meta:
+        model = College
+        fields = ["college_name", "location", "courses"]
 
 
 class AdminRegSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    # name = serializers.CharField()
 
-    # def create(self, validated_data):
-    #     email = validated_data.get("email")
-    #     password = validated_data.get("password")
-    #     name = validated_data.get("name")
-    #     admin = CustomUser.objects.create_superuser(
-    #         email=email,
-    #         password=password,
-    #         name=name,
-    #     )
-    #     return admin
+
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = ["location_name"]
+
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ["course_name"]
 
 
 class LoginSerializer(serializers.Serializer):
@@ -122,3 +81,12 @@ class OtpVerificationSerializer(serializers.Serializer):
         if not email or not otp:
             raise serializers.ValidationError("Both email and OTP are required.")
         return data
+    
+
+class CollegeListSerializer(serializers.ModelSerializer):
+    location = LocationSerializer(read_only=True)  
+    courses = CourseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = College
+        fields = ["college_name", "location", "courses"]

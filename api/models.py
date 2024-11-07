@@ -1,17 +1,23 @@
 from django.db import models
 from .manager import UserManager
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.hashers import make_password
+
 # from django.utils import timezone
 
 
 class Location(models.Model):
-    location_name = models.CharField(max_length=200)
+    location_name = models.CharField(max_length=200, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.location_name
 
 
 class CustomUser(AbstractBaseUser):
 
     email = models.EmailField(unique=True)
-    # name = models.CharField(max_length=100)
 
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -19,7 +25,15 @@ class CustomUser(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["password"]
+
+    def save(self, *args, **kwargs):
+
+        # Hash the password before saving
+        if self.password and not self.password.startswith(
+            ("pbkdf2_sha256$", "bcrypt", "sha1", "md5")
+        ):
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
 
     objects = UserManager()
 
@@ -34,31 +48,37 @@ class CustomUser(AbstractBaseUser):
 
 
 class Student(models.Model):
-    custom_user = models.OneToOneField(CustomUser,on_delete=models.CASCADE,null=True)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, null=True)
     student_name = models.CharField(max_length=100)
     gender = models.CharField(max_length=20)
-    location = models.CharField(max_length=100)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
     otp = models.CharField(max_length=6, null=True)
     otp_expiry = models.DateTimeField(null=True)
 
+    def __str__(self):
+        return self.student_name
+
 
 class Course(models.Model):
-    course_type = models.CharField(max_length=100)
+    course_name = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
-# class College(models.Model):
-#     custom_user_id = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
-#     college_name = models.CharField(max_length=200)
-#     college_logo = models.ImageField(null=True)
-#     # location_id = models.ForeignKey(Location, on_delete=models.CASCADE)
-#     # courses_id = models.ManyToManyField(Course)
-#     location = models.CharField(max_length=50)
-#     course = models.CharField(max_length=50)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.course_name
 
 
-# class CollegeRegRequest(models.Model):
-#     college = models.ForeignKey(College,on_delete=models.CASCADE)
+class College(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, null=True)
+    college_name = models.CharField(max_length=200)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    courses = models.ManyToManyField(Course, related_name="courses")
+    is_approved = models.BooleanField(default=False)
+    approval_request_sent = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.college_name
+
+
