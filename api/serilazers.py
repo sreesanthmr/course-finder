@@ -57,7 +57,30 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled.")
 
+        try:
+
+            if user.is_student:
+                student = Student.objects.get(user = user)
+                user_data = {
+                    "name": student.student_name,
+                    "gender": student.gender,
+                    "location": student.location.location_name,
+                }
+            
+            elif user.is_college:
+                college = College.objects.get(user=user)
+                courses = CourseSerializer(college.courses.all(), many=True).data
+                user_data = {
+                    "college_name": college.college_name,
+                    "courses": courses,
+                    "location": college.location.location_name,
+                }
+            
+        except Student.DoesNotExist:
+            user_data = None    
+
         data["user"] = user
+        data["user_data"] = user_data
         return data
 
     def get_jwt_token(self, user):

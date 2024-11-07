@@ -108,6 +108,7 @@ class VerifyOtpView(APIView):
                 student.otp = None
                 student.otp_expiry = None
                 user.is_active = True
+                user.is_student = True
                 user.save()
                 student.save()
                 return Response(
@@ -197,8 +198,14 @@ class LoginView(APIView):
 
         if serializer.is_valid():
             user = serializer.validated_data["user"]
+            user_data = serializer.validated_data.get("user_data")
             token = serializer.get_jwt_token(user)
-            return Response(token, status=status.HTTP_200_OK)
+
+            response_data = {
+                "token": token,
+                "user_data": user_data,
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -249,7 +256,8 @@ class AdminCollegeApprovalView(APIView):
             if action == "approve":
                 college.is_approved = True
                 college.approval_request_sent = False 
-                user.is_active = True 
+                user.is_active = True
+                user.is_college = True
                 college.save()
                 user.save()
                 return Response({"message": "College approved successfully."}, status=status.HTTP_200_OK)
@@ -272,3 +280,18 @@ class CollegeListView(APIView):
         colleges = College.objects.all()  
         serializer = CollegeListSerializer(colleges, many=True)  
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+class LocationListView(APIView):
+    def get(self,request):
+        colleges = College.objects.all()  
+        serializer = CollegeListSerializer(colleges, many=True)  
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+####################################################################
+
+
+# class CollegeView(APIView):
+#     def get(self, requst)
+    
