@@ -115,6 +115,7 @@ class CollegeListSerializer(serializers.ModelSerializer):
         fields = ["college_name", "location", "courses"]
 
 
+
 class StudentProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student

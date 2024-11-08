@@ -9,6 +9,8 @@ from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
 from django.utils import timezone
 from .permissions import IsAuthenticatedWithJWT
+from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class StudentRegView(APIView):
@@ -277,16 +279,21 @@ class AdminCollegeApprovalView(APIView):
 
 class CollegeListView(APIView):
     def get(self, request):
-        colleges = College.objects.all()  
-        serializer = CollegeListSerializer(colleges, many=True)  
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        permission_classes = [IsAuthenticatedWithJWT]
+
+        try:
+            colleges = College.objects.all()  
+            serializer = CollegeListSerializer(colleges, many=True)  
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response({"message":"not result found"}, status=status.HTTP_404_NOT_FOUND)
+        
     
-    
-class LocationListView(APIView):
-    def get(self,request):
-        colleges = College.objects.all()  
-        serializer = CollegeListSerializer(colleges, many=True)  
-        return Response(serializer.data, status=status.HTTP_200_OK)
+# class LocationListView(APIView):
+#     def get(self,request):
+#         location = Location.objects.all()  
+#         serializer = CollegeListSerializer(location, many=True)  
+#         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
 ####################################################################
@@ -324,5 +331,71 @@ class CollegeProfileUpdateView(APIView):
             return Response({"message":"College updated successfully", "profile": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     
+
+class CollegeDetailsView(APIView):
+    def get(self,request):
+        permission_classes = [IsAuthenticatedWithJWT]
+
+        college_id = request.data.get("id")
+        college = College.objects.get(id=college_id)
+        serializer = CollegeSerializer(college)
+        college_name = serializer.data.pop("college_name")
+        location_id = serializer.data.pop("location")
+        course_ids = serializer.data.pop("courses")
+
+        location = Location.objects.filter(id=location_id).values('location_name').first()
+        course_list = []
+
+        for course_id in course_ids:
+            course = Course.objects.filter(id = course_id).values('course_name')
+            course_list.append(course)
+
+        response = {
+                "college_name":college_name,
+                "location":location,
+                "courses":course_list
+            }
+
+        return Response(response,status=status.HTTP_200_OK)
+    
+
+
+
+class SearchView(APIView):
+    def get(self, request):
+        permission_classes = [IsAuthenticatedWithJWT]
+
+        query = request.query_params.get('query', None)
+        
+        if not query:
+            return Response({"message": "Query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            course_results = []
+            college_results = []
+
+            if Course.objects.exists():
+                course_q = Q(course_name__icontains=query)
+                courses = Course.objects.filter(course_q)
+                course_results = CourseSerializer(courses, many=True).data
+
+            if College.objects.exists():
+                college_q = Q(college_name__icontains=query) | Q(location__location_name__icontains=query) | Q(courses__course_name__icontains=query)
+                colleges = College.objects.filter(college_q).select_related('location').prefetch_related('courses').distinct()
+                college_results = CollegeListSerializer(colleges, many=True).data
+
+
+            result = {
+                "courses": course_results,
+                "colleges": college_results,
+            }
+
+            return Response(result, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist as e:
+            return Response({"message": "not found.", "details": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({"message": "An unexpected error occurred.", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
