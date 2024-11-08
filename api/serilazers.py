@@ -10,13 +10,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ["email", "password"]
 
 
-class StudentRegSerializer(serializers.ModelSerializer):
+class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = ["student_name", "gender", "location"]
 
 
-class CollegeRegSerializer(serializers.ModelSerializer):
+class CollegeSerializer(serializers.ModelSerializer):
     courses = serializers.PrimaryKeyRelatedField(
         queryset=Course.objects.all(), many=True
     )
@@ -113,3 +113,19 @@ class CollegeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = College
         fields = ["college_name", "location", "courses"]
+
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ["user", "student_name", "gender", "location"]
+
+
+class CollegeProfileSerializer(serializers.ModelSerializer):
+    courses = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(), many=True
+    )
+
+    class Meta:
+        model = College
+        fields = ["user","college_name", "location", "courses"]

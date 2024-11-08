@@ -11,5 +11,7 @@ urlpatterns = [
     path("course_reg/", CourseRegView.as_view()),
     path("admin_approval/", AdminCollegeApprovalView.as_view()),
     path("colleges/", CollegeListView.as_view()),
+    path("student_update/", StudentProfileUpdateView.as_view()),
+    path("college_update/", CollegeProfileUpdateView.as_view()),
     
 ]

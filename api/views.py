@@ -39,7 +39,7 @@ class StudentRegView(APIView):
 
             }
 
-            serializer_two = StudentRegSerializer(data=student_data)
+            serializer_two = StudentSerializer(data=student_data)
         
 
             if serializer_two.is_valid():
@@ -148,7 +148,7 @@ class CollegeRegView(APIView):
                 "location": request.data.get("location"),
 
             }
-            serializer_two = CollegeRegSerializer(data=college_data)
+            serializer_two = CollegeSerializer(data=college_data)
 
 
             if serializer_two.is_valid():
@@ -292,6 +292,37 @@ class LocationListView(APIView):
 ####################################################################
 
 
-# class CollegeView(APIView):
-#     def get(self, requst)
+class StudentProfileUpdateView(APIView):
+    def put(self,request):
+        permission_classes = [IsAuthenticatedWithJWT]
+
+        data = request.data
+        user = request.data.get("user")
+        student = Student.objects.get(user=user)
+        serializer = StudentProfileSerializer(student, data = data, partial = True)
+
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message":"Student updated successfully", "profile": serializer.data}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class CollegeProfileUpdateView(APIView):
+    def put(self,request):
+        permission_classes = [IsAuthenticatedWithJWT]
+
+        data = request.data
+        user = request.data.get("user")
+        college = College.objects.get(user=user)
+        serializer = CollegeProfileSerializer(college, data = data, partial = True)
+
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message":"College updated successfully", "profile": serializer.data}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
