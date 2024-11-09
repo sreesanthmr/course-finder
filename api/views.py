@@ -327,6 +327,8 @@ class CollegeListView(APIView):
 
 class LocationListView(APIView):
     def get(self, request):
+        permission_classes = [IsAuthenticatedWithJWT]
+        
         location = Location.objects.all()
         serializer = LocationDetailsSerializer(location, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -334,7 +336,6 @@ class LocationListView(APIView):
 
 class LocationBasedCollegeListView(APIView):
     def get(self, request, location_id):
-        # location_id = request.data.get("location_id")
         college = College.objects.filter(location=location_id)
         serializer = CollegeDetailsSerializer(college, many=True)
         return Response(serializer.data)
