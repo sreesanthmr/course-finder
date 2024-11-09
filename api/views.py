@@ -41,7 +41,7 @@ class StudentRegView(APIView):
 
             }
 
-            serializer_two = StudentSerializer(data=student_data)
+            serializer_two = StudentRegSerializer(data=student_data)
         
 
             if serializer_two.is_valid():
@@ -97,7 +97,7 @@ class VerifyOtpView(APIView):
             otp = serializer.validated_data["otp"]
 
             try:
-                user = CustomUser.objects.filter(email=email).first()
+                user = CustomUser.objects.filter(email=email)
             except CustomUser.DoesNotExist:
                 return Response({"message": "User with this email does not exist."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -150,7 +150,7 @@ class CollegeRegView(APIView):
                 "location": request.data.get("location"),
 
             }
-            serializer_two = CollegeSerializer(data=college_data)
+            serializer_two = CollegeRegSerializer(data=college_data)
 
 
             if serializer_two.is_valid():
@@ -216,7 +216,7 @@ class LoginView(APIView):
 class LocationRegView(APIView):
     def post(self, request):
         data = request.data
-        serializer = LocationSerializer(data=data)
+        serializer = LocationDetailsSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -227,7 +227,7 @@ class LocationRegView(APIView):
 class CourseRegView(APIView):
     def post(self, request):
         data = request.data
-        serializer = CourseSerializer(data=data)
+        serializer = CourseDetailsSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -273,31 +273,34 @@ class AdminCollegeApprovalView(APIView):
             return Response({"message": "College not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-
-####################################################################
-
-
 class CollegeListView(APIView):
     def get(self, request):
         permission_classes = [IsAuthenticatedWithJWT]
 
         try:
             colleges = College.objects.all()  
-            serializer = CollegeListSerializer(colleges, many=True)  
+            serializer = CollegeDetailsSerializer(colleges, many=True)  
             return Response(serializer.data, status=status.HTTP_200_OK)
         except:
             return Response({"message":"not result found"}, status=status.HTTP_404_NOT_FOUND)
         
     
-# class LocationListView(APIView):
-#     def get(self,request):
-#         location = Location.objects.all()  
-#         serializer = CollegeListSerializer(location, many=True)  
-#         return Response(serializer.data, status=status.HTTP_200_OK)
+class LocationListView(APIView):
+    def get(self,request):
+        location = Location.objects.all()  
+        serializer = LocationDetailsSerializer(location, many=True)  
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-####################################################################
+class LocationBasedCollegeListView(APIView):
+    def get(self,request):
 
+        location_id = request.data.get("id")
+        print(location_id)
+        college = College.objects.filter(location = location_id)
+        serializer = CollegeDetailsSerializer(college, many = True)
+        return Response(serializer.data)
+    
 
 class StudentProfileUpdateView(APIView):
     def put(self,request):
@@ -338,28 +341,11 @@ class CollegeDetailsView(APIView):
         permission_classes = [IsAuthenticatedWithJWT]
 
         college_id = request.data.get("id")
-        college = College.objects.get(id=college_id)
-        serializer = CollegeSerializer(college)
-        college_name = serializer.data.pop("college_name")
-        location_id = serializer.data.pop("location")
-        course_ids = serializer.data.pop("courses")
+        college = College.objects.get(id = college_id)
+        serializer = CollegeDetailsSerializer(college)
 
-        location = Location.objects.filter(id=location_id).values('location_name').first()
-        course_list = []
-
-        for course_id in course_ids:
-            course = Course.objects.filter(id = course_id).values('course_name')
-            course_list.append(course)
-
-        response = {
-                "college_name":college_name,
-                "location":location,
-                "courses":course_list
-            }
-
-        return Response(response,status=status.HTTP_200_OK)
+        return Response(serializer.data,status=status.HTTP_200_OK)
     
-
 
 
 class SearchView(APIView):
@@ -378,12 +364,12 @@ class SearchView(APIView):
             if Course.objects.exists():
                 course_q = Q(course_name__icontains=query)
                 courses = Course.objects.filter(course_q)
-                course_results = CourseSerializer(courses, many=True).data
+                course_results = CourseDetailsSerializer(courses, many=True).data
 
             if College.objects.exists():
                 college_q = Q(college_name__icontains=query) | Q(location__location_name__icontains=query) | Q(courses__course_name__icontains=query)
                 colleges = College.objects.filter(college_q).select_related('location').prefetch_related('courses').distinct()
-                college_results = CollegeListSerializer(colleges, many=True).data
+                college_results = CollegeDetailsSerializer(colleges, many=True).data
 
 
             result = {

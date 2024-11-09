@@ -10,13 +10,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ["email", "password"]
 
 
-class StudentSerializer(serializers.ModelSerializer):
+class StudentRegSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = ["student_name", "gender", "location"]
 
 
-class CollegeSerializer(serializers.ModelSerializer):
+class StudentDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ["id", "student_name", "gender", "location"]
+
+
+class CollegeRegSerializer(serializers.ModelSerializer):
     courses = serializers.PrimaryKeyRelatedField(
         queryset=Course.objects.all(), many=True
     )
@@ -31,16 +37,28 @@ class AdminRegSerializer(serializers.Serializer):
     password = serializers.CharField()
 
 
-class LocationSerializer(serializers.ModelSerializer):
+class LocationRegSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
         fields = ["location_name"]
 
 
-class CourseSerializer(serializers.ModelSerializer):
+class LocationDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = ["id", "location_name"]
+
+
+class CourseRegSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ["course_name"]
+
+
+class CourseDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ["id", "course_name"]
 
 
 class LoginSerializer(serializers.Serializer):
@@ -69,7 +87,7 @@ class LoginSerializer(serializers.Serializer):
             
             elif user.is_college:
                 college = College.objects.get(user=user)
-                courses = CourseSerializer(college.courses.all(), many=True).data
+                courses = CourseDetailsSerializer(college.courses.all(), many=True).data
                 user_data = {
                     "college_name": college.college_name,
                     "courses": courses,
@@ -106,13 +124,13 @@ class OtpVerificationSerializer(serializers.Serializer):
         return data
     
 
-class CollegeListSerializer(serializers.ModelSerializer):
-    location = LocationSerializer(read_only=True)  
-    courses = CourseSerializer(many=True, read_only=True)
+class CollegeDetailsSerializer(serializers.ModelSerializer):
+    location = LocationDetailsSerializer(read_only=True)  
+    courses = CourseDetailsSerializer(many=True, read_only=True)
 
     class Meta:
         model = College
-        fields = ["college_name", "location", "courses"]
+        fields = ["id", "college_name", "location", "courses"]
 
 
 

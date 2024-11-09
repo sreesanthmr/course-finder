@@ -3,7 +3,6 @@ from .manager import UserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.hashers import make_password
 
-# from django.utils import timezone
 
 
 class Location(models.Model):
