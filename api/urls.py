@@ -13,7 +13,7 @@ urlpatterns = [
     path("colleges/", CollegeListView.as_view()),
     path("student_update/", StudentProfileUpdateView.as_view()),
     path("college_update/", CollegeProfileUpdateView.as_view()),
-    path("college_details/", CollegeDetailsView.as_view()),
+    path("college_details/<int:college_id>/", CollegeDetailsView.as_view()),
     path("search/", SearchView.as_view()),
     path("location_list/", LocationListView.as_view()),
     path("location_based_college_list/", LocationBasedCollegeListView.as_view()),
