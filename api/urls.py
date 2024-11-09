@@ -16,6 +16,6 @@ urlpatterns = [
     path("college_details/<int:college_id>/", CollegeDetailsView.as_view()),
     path("search/", SearchView.as_view()),
     path("location_list/", LocationListView.as_view()),
-    path("location_based_college_list/", LocationBasedCollegeListView.as_view()),
+    path("location_based_college_list/<int:location_id>/", LocationBasedCollegeListView.as_view()),
     
 ]

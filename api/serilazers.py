@@ -148,3 +148,19 @@ class CollegeProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = College
         fields = ["user","college_name", "location", "courses"]
+
+
+class CustomUserAndCollegeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+    college_name = serializers.CharField()
+    courses = serializers.ListSerializer(child=serializers.IntegerField())
+    location = serializers.IntegerField()
+
+
+class CustomUserAndStudentSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+    student_name = serializers.CharField()
+    gender = serializers.CharField()
+    location = serializers.IntegerField()

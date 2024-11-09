@@ -11,9 +11,14 @@ from django.utils import timezone
 from .permissions import IsAuthenticatedWithJWT
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import generics
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class StudentRegView(APIView):
+
+    @swagger_auto_schema(request_body=CustomUserAndStudentSerializer)
     def post(self, request):
 
         try:
@@ -83,6 +88,8 @@ class StudentRegView(APIView):
 
 
 class VerifyOtpView(APIView):
+
+    @swagger_auto_schema(request_body=OtpVerificationSerializer)
     def post(self, request):
         data = request.data
         serializer = OtpVerificationSerializer(data=data)
@@ -127,6 +134,8 @@ class VerifyOtpView(APIView):
 
 
 class CollegeRegView(APIView):
+
+    @swagger_auto_schema(request_body=CustomUserAndCollegeSerializer)
     def post(self, request):
 
         try:
@@ -193,6 +202,8 @@ class AdminRegView(APIView):
 
 
 class LoginView(APIView):
+
+    @swagger_auto_schema(request_body=LoginSerializer)
     def post(self, request):
         data = request.data
         serializer = LoginSerializer(data=data)
@@ -212,9 +223,13 @@ class LoginView(APIView):
 
 
 class LocationRegView(APIView):
+
+    @swagger_auto_schema(
+        request_body=LocationRegSerializer,
+    )
     def post(self, request):
         data = request.data
-        serializer = LocationDetailsSerializer(data=data)
+        serializer = LocationRegSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -226,9 +241,11 @@ class LocationRegView(APIView):
 
 
 class CourseRegView(APIView):
+
+    @swagger_auto_schema(request_body=CourseRegSerializer)
     def post(self, request):
         data = request.data
-        serializer = CourseDetailsSerializer(data=data)
+        serializer = CourseRegSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -242,18 +259,19 @@ class CourseRegView(APIView):
 class AdminCollegeApprovalView(APIView):
     def get(self, request):
         colleges = College.objects.filter(is_approved=False, approval_request_sent=True)
+        serializer = CollegeDetailsSerializer(colleges, many=True)
 
-        college_data = [
-            {
-                "college_name": college.college_name,
-                "location": college.location,
-                "id": college.id,
-            }
-            for college in colleges
-        ]
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(college_data, status=status.HTTP_200_OK)
-
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "college_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "action": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        )
+    )
     def post(self, request):
         college_id = request.data.get("college_id")
         action = request.data.get("action")
@@ -316,15 +334,15 @@ class LocationListView(APIView):
 
 class LocationBasedCollegeListView(APIView):
     def get(self, request):
-
-        location_id = request.data.get("id")
-        print(location_id)
+        location_id = request.data.get("location_id")
         college = College.objects.filter(location=location_id)
         serializer = CollegeDetailsSerializer(college, many=True)
         return Response(serializer.data)
 
 
 class StudentProfileUpdateView(APIView):
+
+    @swagger_auto_schema(request_body=StudentProfileSerializer)
     def put(self, request):
         permission_classes = [IsAuthenticatedWithJWT]
 
@@ -344,6 +362,8 @@ class StudentProfileUpdateView(APIView):
 
 
 class CollegeProfileUpdateView(APIView):
+
+    @swagger_auto_schema(request_body=CollegeProfileSerializer)
     def put(self, request):
         permission_classes = [IsAuthenticatedWithJWT]
 
@@ -366,7 +386,6 @@ class CollegeDetailsView(APIView):
     def get(self, request, college_id):
         permission_classes = [IsAuthenticatedWithJWT]
 
-        # college_id = request.data.get("id")
         college = College.objects.get(id=college_id)
         serializer = CollegeDetailsSerializer(college)
 
@@ -374,6 +393,12 @@ class CollegeDetailsView(APIView):
 
 
 class SearchView(APIView):
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter("query", openapi.IN_QUERY, type=openapi.TYPE_STRING),
+        ]
+    )
     def get(self, request):
         permission_classes = [IsAuthenticatedWithJWT]
 
