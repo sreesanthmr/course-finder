@@ -78,13 +78,13 @@ class LoginSerializer(serializers.Serializer):
         try:
 
             if user.is_student:
-                student = Student.objects.get(user = user)
+                student = Student.objects.get(user=user)
                 user_data = {
                     "name": student.student_name,
                     "gender": student.gender,
                     "location": student.location.location_name,
                 }
-            
+
             elif user.is_college:
                 college = College.objects.get(user=user)
                 courses = CourseDetailsSerializer(college.courses.all(), many=True).data
@@ -93,9 +93,9 @@ class LoginSerializer(serializers.Serializer):
                     "courses": courses,
                     "location": college.location.location_name,
                 }
-            
+
         except Student.DoesNotExist:
-            user_data = None    
+            user_data = None
 
         data["user"] = user
         data["user_data"] = user_data
@@ -122,16 +122,15 @@ class OtpVerificationSerializer(serializers.Serializer):
         if not email or not otp:
             raise serializers.ValidationError("Both email and OTP are required.")
         return data
-    
+
 
 class CollegeDetailsSerializer(serializers.ModelSerializer):
-    location = LocationDetailsSerializer(read_only=True)  
+    location = LocationDetailsSerializer(read_only=True)
     courses = CourseDetailsSerializer(many=True, read_only=True)
 
     class Meta:
         model = College
         fields = ["id", "college_name", "location", "courses"]
-
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -147,7 +146,7 @@ class CollegeProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = College
-        fields = ["user","college_name", "location", "courses"]
+        fields = ["user", "college_name", "location", "courses"]
 
 
 class CustomUserAndCollegeSerializer(serializers.Serializer):

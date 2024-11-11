@@ -190,15 +190,21 @@ class AdminRegView(APIView):
     def post(self, request):
         data = request.data
         serializer = AdminRegSerializer(data=data)
+        try:
+            if serializer.is_valid():
+                CustomUser.objects.create_superuser(**serializer.validated_data)
+                return Response(
+                    {"message": "Admin registered successfully."},
+                    status=status.HTTP_201_CREATED,
+                )
 
-        if serializer.is_valid():
-            CustomUser.objects.create_superuser(**serializer.validated_data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response(
-                {"message": "Admin registered successfully."},
-                status=status.HTTP_201_CREATED,
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -208,18 +214,24 @@ class LoginView(APIView):
         data = request.data
         serializer = LoginSerializer(data=data)
 
-        if serializer.is_valid():
-            user = serializer.validated_data["user"]
-            user_data = serializer.validated_data.get("user_data")
-            token = serializer.get_jwt_token(user)
+        try:
+            if serializer.is_valid():
+                user = serializer.validated_data["user"]
+                user_data = serializer.validated_data.get("user_data")
+                token = serializer.get_jwt_token(user)
 
-            response_data = {
-                "token": token,
-                "user_data": user_data,
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
+                response_data = {
+                    "token": token,
+                    "user_data": user_data,
+                }
+                return Response(response_data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LocationRegView(APIView):
@@ -231,13 +243,19 @@ class LocationRegView(APIView):
         data = request.data
         serializer = LocationRegSerializer(data=data)
 
-        if serializer.is_valid():
-            serializer.save()
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Location registered successfully"},
+                    status=status.HTTP_201_CREATED,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response(
-                {"message": "Location registered successfully"},
-                status=status.HTTP_201_CREATED,
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CourseRegView(APIView):
@@ -247,21 +265,33 @@ class CourseRegView(APIView):
         data = request.data
         serializer = CourseRegSerializer(data=data)
 
-        if serializer.is_valid():
-            serializer.save()
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Course registered successfully"},
+                    status=status.HTTP_201_CREATED,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response(
-                {"message": "Course registered successfully"},
-                status=status.HTTP_201_CREATED,
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class AdminCollegeApprovalView(APIView):
     def get(self, request):
-        colleges = College.objects.filter(is_approved=False, approval_request_sent=True)
-        serializer = CollegeDetailsSerializer(colleges, many=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            colleges = College.objects.filter(is_approved=False, approval_request_sent=True)
+            serializer = CollegeDetailsSerializer(colleges, many=True)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -328,18 +358,30 @@ class CollegeListView(APIView):
 class LocationListView(APIView):
     def get(self, request):
         permission_classes = [IsAuthenticatedWithJWT]
-        
-        location = Location.objects.all()
-        serializer = LocationDetailsSerializer(location, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        try:
+            location = Location.objects.all()
+            serializer = LocationDetailsSerializer(location, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class LocationBasedCollegeListView(APIView):
     def get(self, request, location_id):
-        college = College.objects.filter(location=location_id)
-        serializer = CollegeDetailsSerializer(college, many=True)
-        return Response(serializer.data)
 
+        try:
+            college = College.objects.filter(location=location_id)
+            serializer = CollegeDetailsSerializer(college, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class StudentProfileUpdateView(APIView):
 
@@ -352,15 +394,21 @@ class StudentProfileUpdateView(APIView):
         student = Student.objects.get(user=user)
         serializer = StudentProfileSerializer(student, data=data, partial=True)
 
-        if serializer.is_valid():
-            serializer.save()
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Student updated successfully", "profile": serializer.data},
+                    status=status.HTTP_200_OK,
+                )
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
             return Response(
-                {"message": "Student updated successfully", "profile": serializer.data},
-                status=status.HTTP_200_OK,
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class CollegeProfileUpdateView(APIView):
 
@@ -373,25 +421,37 @@ class CollegeProfileUpdateView(APIView):
         college = College.objects.get(user=user)
         serializer = CollegeProfileSerializer(college, data=data, partial=True)
 
-        if serializer.is_valid():
-            serializer.save()
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "College updated successfully", "profile": serializer.data},
+                    status=status.HTTP_200_OK,
+                )
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response(
-                {"message": "College updated successfully", "profile": serializer.data},
-                status=status.HTTP_200_OK,
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class CollegeDetailsView(APIView):
     def get(self, request, college_id):
         permission_classes = [IsAuthenticatedWithJWT]
 
-        college = College.objects.get(id=college_id)
-        serializer = CollegeDetailsSerializer(college)
+        try:
+            college = College.objects.get(id=college_id)
+            serializer = CollegeDetailsSerializer(college)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
 
 class SearchView(APIView):
 
