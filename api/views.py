@@ -11,7 +11,7 @@ from django.utils import timezone
 from .permissions import IsAuthenticatedWithJWT
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework import generics
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -375,8 +375,13 @@ class LocationBasedCollegeListView(APIView):
 
         try:
             college = College.objects.filter(location=location_id)
+
+            if not college.exists():
+                return Response({"message":"No Colleges found in the location"},status=status.HTTP_404_NOT_FOUND)
+            
             serializer = CollegeDetailsSerializer(college, many=True)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
         except Exception as e:
             return Response(
                 {"message": f"An error occurred: {str(e)}"}, 
