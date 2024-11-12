@@ -9,6 +9,7 @@ from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
 from django.utils import timezone
 from .permissions import IsAuthenticatedWithJWT
+from rest_framework.permissions import IsAdminUser
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
@@ -99,7 +100,7 @@ class VerifyOtpView(APIView):
             otp = serializer.validated_data["otp"]
 
             try:
-                user = CustomUser.objects.filter(email=email)
+                user = CustomUser.objects.get(email=email)
             except CustomUser.DoesNotExist:
                 return Response(
                     {"message": "User with this email does not exist."},
@@ -370,6 +371,21 @@ class LocationListView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+class CourseListView(APIView):
+    def get(self, request):
+        permission_classes = [IsAuthenticatedWithJWT]
+
+        try:
+            courses = Course.objects.all()
+            serializer = CourseDetailsSerializer(courses, many = True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 class LocationBasedCollegeListView(APIView):
     def get(self, request, location_id):
 
@@ -517,3 +533,70 @@ class SearchView(APIView):
                 {"message": "An unexpected error occurred.", "details": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class ApplyToCollegeView(APIView):
+    
+    @swagger_auto_schema(request_body=AppliedStudentsSerializer)
+    def post(self, request):
+        data ={
+            "student_id" : request.data.get("student_id"),
+            "college_id" : request.data.get("college_id")
+        }
+        
+        serializer = AppliedStudentsSerializer(data = data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+        else:
+            print("Serializer one errors:", serializer.errors)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return Response(
+            {"message":"Applied Successfully"}, status=status.HTTP_200_OK
+        )
+
+
+
+class AppliedStudentsView(APIView):
+    def get(self, request, college_id):
+        applied_students = AppliedStudents.objects.filter(college_id = college_id).values_list('student_id', flat=True)
+        students = Student.objects.filter(id__in = applied_students)
+        serializer = StudentDetailsSerializer(students, many = True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class StudentListView(APIView):
+    def get(self, request):
+        permission_classes = [IsAdminUser]
+
+        try:
+            students = Student.objects.all()
+            serializer = StudentDetailsSerializer(students, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response(
+                {"message": "not result found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        
+class StudentDetailsView(APIView):
+    def get(self, request, student_id):
+        permission_classes = [IsAdminUser]
+
+        try:
+            student = Student.objects.get(id=student_id)
+            serializer = StudentDetailsSerializer(student)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response(
+                {"message": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+

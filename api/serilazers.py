@@ -15,6 +15,7 @@ class StudentRegSerializer(serializers.ModelSerializer):
         model = Student
         fields = ["student_name", "gender", "location"]
 
+ 
 
 class StudentDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -94,6 +95,11 @@ class LoginSerializer(serializers.Serializer):
                     "location": college.location.location_name,
                 }
 
+            elif not user.is_college and not user.is_student:
+                data["user"] = user
+                data["user_data"] = "admin"
+                return data
+
         except Student.DoesNotExist:
             user_data = None
 
@@ -163,3 +169,9 @@ class CustomUserAndStudentSerializer(serializers.Serializer):
     student_name = serializers.CharField()
     gender = serializers.CharField()
     location = serializers.IntegerField()
+
+
+class AppliedStudentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppliedStudents
+        fields = "__all__"

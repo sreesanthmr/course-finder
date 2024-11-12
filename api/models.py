@@ -81,5 +81,11 @@ class College(models.Model):
 
     def __str__(self):
         return self.college_name
+    
+
+class AppliedStudents(models.Model):
+    student_id = models.ForeignKey(Student,on_delete=models.CASCADE)
+    college_id = models.ForeignKey(College,on_delete=models.CASCADE)
+
 
 

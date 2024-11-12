@@ -10,7 +10,7 @@ urlpatterns = [
     path("location_reg/", LocationRegView.as_view()),
     path("course_reg/", CourseRegView.as_view()),
     path("admin_approval/", AdminCollegeApprovalView.as_view()),
-    path("colleges/", CollegeListView.as_view()),
+    path("colleges_list/", CollegeListView.as_view()),
     path("student_update/", StudentProfileUpdateView.as_view()),
     path("college_update/", CollegeProfileUpdateView.as_view()),
     path("college_details/<int:college_id>/", CollegeDetailsView.as_view()),
@@ -20,4 +20,8 @@ urlpatterns = [
         "location_based_college_list/<int:location_id>/",
         LocationBasedCollegeListView.as_view(),
     ),
+    path("apply/", ApplyToCollegeView.as_view()),
+    path("applied_students/<int:college_id>", AppliedStudentsView.as_view()),
+    path("students_details/<int:student_id>", StudentDetailsView.as_view()),
+    path("students_list/", StudentListView.as_view()),
 ]
