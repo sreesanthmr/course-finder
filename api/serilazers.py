@@ -15,7 +15,6 @@ class StudentRegSerializer(serializers.ModelSerializer):
         model = Student
         fields = ["student_name", "gender", "location"]
 
- 
 
 class StudentDetailsSerializer(serializers.ModelSerializer):
     class Meta:

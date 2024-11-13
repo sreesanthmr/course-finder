@@ -202,10 +202,9 @@ class AdminRegView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-
 
 
 class LoginView(APIView):
@@ -230,8 +229,8 @@ class LoginView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -255,8 +254,8 @@ class LocationRegView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -278,23 +277,26 @@ class CourseRegView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class AdminCollegeApprovalView(APIView):
     def get(self, request):
         permission_classes = [IsAdminUser]
 
         try:
-            colleges = College.objects.filter(is_approved=False, approval_request_sent=True)
+            colleges = College.objects.filter(
+                is_approved=False, approval_request_sent=True
+            )
             serializer = CollegeDetailsSerializer(colleges, many=True)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
     @swagger_auto_schema(
@@ -369,12 +371,13 @@ class LocationListView(APIView):
             location = Location.objects.all()
             serializer = LocationDetailsSerializer(location, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class CourseListView(APIView):
     def get(self, request):
@@ -382,14 +385,15 @@ class CourseListView(APIView):
 
         try:
             courses = Course.objects.all()
-            serializer = CourseDetailsSerializer(courses, many = True)
+            serializer = CourseDetailsSerializer(courses, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class LocationBasedCollegeListView(APIView):
     def get(self, request, location_id):
@@ -398,16 +402,20 @@ class LocationBasedCollegeListView(APIView):
             college = College.objects.filter(location=location_id)
 
             if not college.exists():
-                return Response({"message":"No Colleges found in the location"},status=status.HTTP_404_NOT_FOUND)
-            
+                return Response(
+                    {"message": "No Colleges found in the location"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
             serializer = CollegeDetailsSerializer(college, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class StudentProfileUpdateView(APIView):
 
@@ -424,7 +432,10 @@ class StudentProfileUpdateView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    {"message": "Student updated successfully", "profile": serializer.data},
+                    {
+                        "message": "Student updated successfully",
+                        "profile": serializer.data,
+                    },
                     status=status.HTTP_200_OK,
                 )
 
@@ -432,9 +443,10 @@ class StudentProfileUpdateView(APIView):
 
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class CollegeProfileUpdateView(APIView):
 
@@ -451,16 +463,20 @@ class CollegeProfileUpdateView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    {"message": "College updated successfully", "profile": serializer.data},
+                    {
+                        "message": "College updated successfully",
+                        "profile": serializer.data,
+                    },
                     status=status.HTTP_200_OK,
                 )
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class CollegeDetailsView(APIView):
     def get(self, request, college_id):
@@ -471,13 +487,13 @@ class CollegeDetailsView(APIView):
             serializer = CollegeDetailsSerializer(college)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
 
 class SearchView(APIView):
 
@@ -541,39 +557,36 @@ class SearchView(APIView):
 
 
 class ApplyToCollegeView(APIView):
-    
+
     @swagger_auto_schema(request_body=AppliedStudentsSerializer)
     def post(self, request):
-        data ={
-            "student_id" : request.data.get("student_id"),
-            "college_id" : request.data.get("college_id")
+        data = {
+            "student_id": request.data.get("student_id"),
+            "college_id": request.data.get("college_id"),
         }
-        
-        serializer = AppliedStudentsSerializer(data = data)
+
+        serializer = AppliedStudentsSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
 
         else:
             print("Serializer one errors:", serializer.errors)
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        return Response(
-            {"message":"Applied Successfully"}, status=status.HTTP_200_OK
-        )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        return Response({"message": "Applied Successfully"}, status=status.HTTP_200_OK)
 
 
 class AppliedStudentsView(APIView):
     def get(self, request, college_id):
-        applied_students = AppliedStudents.objects.filter(college_id = college_id).values_list('student_id', flat=True)
-        students = Student.objects.filter(id__in = applied_students)
-        serializer = StudentDetailsSerializer(students, many = True)
+        applied_students = AppliedStudents.objects.filter(
+            college_id=college_id
+        ).values_list("student_id", flat=True)
+        students = Student.objects.filter(id__in=applied_students)
+        serializer = StudentDetailsSerializer(students, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
 
 class StudentListView(APIView):
     def get(self, request):
@@ -587,7 +600,8 @@ class StudentListView(APIView):
             return Response(
                 {"message": "not result found"}, status=status.HTTP_404_NOT_FOUND
             )
-        
+
+
 class StudentDetailsView(APIView):
     def get(self, request, student_id):
         permission_classes = [IsAdminUser]
@@ -597,18 +611,20 @@ class StudentDetailsView(APIView):
             serializer = StudentDetailsSerializer(student)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response(
-                {"message": f"An error occurred: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": f"An error occurred: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-    
+
+
 class AppliedCollegeView(APIView):
     def get(self, request, student_id):
-        applied_colleges = AppliedStudents.objects.filter(student_id = student_id).values_list("college_id", flat=True)
-        colleges = College.objects.filter(id__in = applied_colleges)
-        serializer = CollegeDetailsSerializer(colleges, many = True)
+        applied_colleges = AppliedStudents.objects.filter(
+            student_id=student_id
+        ).values_list("college_id", flat=True)
+        colleges = College.objects.filter(id__in=applied_colleges)
+        serializer = CollegeDetailsSerializer(colleges, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-
