@@ -236,6 +236,7 @@ class LoginView(APIView):
 
 
 class LocationRegView(APIView):
+    permission_classes = [IsAdminUser]
 
     @swagger_auto_schema(
         request_body=LocationRegSerializer,
@@ -260,6 +261,7 @@ class LocationRegView(APIView):
 
 
 class CourseRegView(APIView):
+    permission_classes = [IsAdminUser]
 
     @swagger_auto_schema(request_body=CourseRegSerializer)
     def post(self, request):
@@ -282,6 +284,7 @@ class CourseRegView(APIView):
 
 class AdminCollegeApprovalView(APIView):
     def get(self, request):
+        permission_classes = [IsAdminUser]
 
         try:
             colleges = College.objects.filter(is_approved=False, approval_request_sent=True)
@@ -304,6 +307,8 @@ class AdminCollegeApprovalView(APIView):
         )
     )
     def post(self, request):
+        permission_classes = [IsAdminUser]
+
         college_id = request.data.get("college_id")
         action = request.data.get("action")
 
@@ -599,4 +604,11 @@ class StudentDetailsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+class AppliedCollegeView(APIView):
+    def get(self, request, student_id):
+        applied_colleges = AppliedStudents.objects.filter(student_id = student_id).values_list("college_id", flat=True)
+        colleges = College.objects.filter(id__in = applied_colleges)
+        serializer = CollegeDetailsSerializer(colleges, many = True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
