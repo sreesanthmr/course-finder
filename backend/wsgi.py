@@ -14,3 +14,6 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
 application = get_wsgi_application()
+
+port = os.environ.get("PORT", "8000")  # Default to 8000 if PORT is not set
+os.system(f"python manage.py runserver 0.0.0.0:{port}")
