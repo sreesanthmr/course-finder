@@ -154,7 +154,12 @@ PORT = 8000
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+
 CORS_ALLOW_HEADERS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",  
+]
 
 CORS_ALLOW_METHODS = [
     "GET",
@@ -162,10 +167,4 @@ CORS_ALLOW_METHODS = [
     "PUT",
     "DELETE",
     "OPTIONS",
-]
-
-
-CORS_ALLOWED_ORIGINS = [
-    # "http://localhost:3000",  # If your frontend runs on localhost
-    "https://course-finder-8jeg.onrender.com",  # Your frontend's domain
 ]
