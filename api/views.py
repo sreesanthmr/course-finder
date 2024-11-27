@@ -16,6 +16,8 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .tasks import send_otp
+from django.db import transaction
+
 
 
 class StudentRegView(APIView):
@@ -27,65 +29,66 @@ class StudentRegView(APIView):
     def post(self, request):
 
         try:
-            custom_user_data = {
-                "email": request.data.get("email"),
-                "password": request.data.get("password"),
-            }
+            with transaction.atomic():
+                custom_user_data = {
+                    "email": request.data.get("email"),
+                    "password": request.data.get("password"),
+                }
 
-            serializer_one = CustomUserSerializer(data=custom_user_data)
+                serializer_one = CustomUserSerializer(data=custom_user_data)
 
-            if serializer_one.is_valid():
-                user = serializer_one.save()
+                if serializer_one.is_valid():
+                    user = serializer_one.save()
 
-            else:
-                print("Serializer one errors:", serializer_one.errors)
-                return Response(
-                    serializer_one.errors, status=status.HTTP_400_BAD_REQUEST
-                )
-
-            student_data = {
-                "student_name": request.data.get("student_name"),
-                "gender": request.data.get("gender"),
-                "location": request.data.get("location"),
-            }
-
-            serializer_two = StudentRegSerializer(data=student_data)
-
-            if serializer_two.is_valid():
-                student = serializer_two.save()
-
-                student.user = user
-                otp = "".join(random.choices(string.digits, k=6))
-                student.otp = otp
-                student.otp_expiry = timezone.now() + timedelta(minutes=5)
-
-                student.save()
-
-                try:
-                    # send_mail(
-                    #     "Your OTP Code",
-                    #     f"Your OTP code is {otp}",
-                    #     settings.EMAIL_HOST_USER,
-                    #     [student.user.email],
-                    #     fail_silently=False,
-                    # )
-                    send_otp.delay(otp, student.user.email)
-
+                else:
+                    print("Serializer one errors:", serializer_one.errors)
                     return Response(
-                        {"message": "OTP sent to the registered email."},
-                        status=status.HTTP_201_CREATED,
+                        serializer_one.errors, status=status.HTTP_400_BAD_REQUEST
                     )
 
-                except BadHeaderError:
+                student_data = {
+                    "student_name": request.data.get("student_name"),
+                    "gender": request.data.get("gender"),
+                    "location": request.data.get("location"),
+                }
+
+                serializer_two = StudentRegSerializer(data=student_data)
+
+                if serializer_two.is_valid():
+                    student = serializer_two.save()
+
+                    student.user = user
+                    otp = "".join(random.choices(string.digits, k=6))
+                    student.otp = otp
+                    student.otp_expiry = timezone.now() + timedelta(minutes=5)
+
+                    student.save()
+
+                    try:
+                        # send_mail(
+                        #     "Your OTP Code",
+                        #     f"Your OTP code is {otp}",
+                        #     settings.EMAIL_HOST_USER,
+                        #     [student.user.email],
+                        #     fail_silently=False,
+                        # )
+                        send_otp.delay(otp, student.user.email)
+
+                        return Response(
+                            {"message": "OTP sent to the registered email."},
+                            status=status.HTTP_201_CREATED,
+                        )
+
+                    except BadHeaderError:
+                        return Response(
+                            {"error": "Invalid header found."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                else:
+                    print("Serializer one errors:", serializer_two.errors)
                     return Response(
-                        {"error": "Invalid header found."},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        serializer_one.errors, status=status.HTTP_400_BAD_REQUEST
                     )
-            else:
-                print("Serializer one errors:", serializer_two.errors)
-                return Response(
-                    serializer_one.errors, status=status.HTTP_400_BAD_REQUEST
-                )
 
         except Exception as e:
             return Response(
