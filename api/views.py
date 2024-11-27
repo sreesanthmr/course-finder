@@ -15,9 +15,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from .tasks import send_otp
 
 
 class StudentRegView(APIView):
+    """
+    API view to register student.
+    """
 
     @swagger_auto_schema(request_body=CustomUserAndStudentSerializer)
     def post(self, request):
@@ -58,15 +62,17 @@ class StudentRegView(APIView):
                 student.save()
 
                 try:
-                    send_mail(
-                        "Your OTP Code",
-                        f"Your OTP code is {otp}",
-                        settings.EMAIL_HOST_USER,
-                        [student.user.email],
-                        fail_silently=False,
-                    )
+                    # send_mail(
+                    #     "Your OTP Code",
+                    #     f"Your OTP code is {otp}",
+                    #     settings.EMAIL_HOST_USER,
+                    #     [student.user.email],
+                    #     fail_silently=False,
+                    # )
+                    send_otp.delay(otp, student.user.email)
+
                     return Response(
-                        {"message": "Student created. Please verify your OTP."},
+                        {"message": "OTP sent to the registered email."},
                         status=status.HTTP_201_CREATED,
                     )
 
